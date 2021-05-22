@@ -7,17 +7,20 @@ from sqlalchemy import create_engine, func
 
 from flask import Flask, jsonify
 
-#### Database Setup ####
+### DATABASE SETUP ###
+
 engine = create_engine("sqlite:///hawaii.sqlite")
 Base = automap_base()
 Base.prepare(engine, reflect=True)
 Measurement = Base.classes.measurement
 Station = Base.classes.station
 
-#### Flask Setup ####
+### FLASK SETUP ###
+
 app = Flask(__name__)
 
-#### Flask Routes ####
+### FLASK ROUTES ###
+
 @app.route("/")
 def home():
     return (
@@ -41,13 +44,11 @@ def home():
 
 @app.route("/api/v1.0/precipitation")
 def precipitation():
-    # Get date and precipitation data from the last year of data #
     session = Session(engine)
     results = session.query(Measurement.date, Measurement.prcp).\
                     filter(Measurement.date >= "2016-08-23").all()
     session.close()
 
-    # Convert the query results to a dictionary using date as the key and prcp as the value
     all_prcp = []
     for date, prcp in results:
         prcp_dict = {}
@@ -61,13 +62,11 @@ def precipitation():
 
 @app.route("/api/v1.0/stations")
 def stations():
-    # Get a list of stations from the dataset #
     session = Session(engine)
     results = session.query(Station.station, Station.name).\
                     order_by(Station.station).all()
     session.close()
 
-    # Create a list of all stations from the query results
     all_stations = list(np.ravel(results))
 
     return jsonify(all_stations)
@@ -76,14 +75,12 @@ def stations():
 
 @app.route("/api/v1.0/tobs")
 def tobs():
-    # Get dates and temp observations of the most active station for the last year of data #
     session = Session(engine)
     results = session.query(Measurement.date, Measurement.tobs).\
                     filter(Measurement.date >= "2016-08-23").\
                     filter(Measurement.station == "USC00519281").all()
     session.close()
 
-    # Create a list of TOBS from the previous year
     all_tobs = list(np.ravel(results))
     
     return jsonify(all_tobs)
@@ -92,14 +89,12 @@ def tobs():
 
 @app.route("/api/v1.0/<start>")
 def min_avg_max_start(start):
-    # Get temp stats for dates starting at given start date inclusive #
     session = Session(engine)
     results = session.query(Measurement.date, func.min(Measurement.tobs), 
                             func.avg(Measurement.tobs), func.max(Measurement.tobs)).\
                             filter(Measurement.date >= start).group_by(Measurement.date).all()
     session.close()
     
-    # Convert the query results to a dictionary
     all_tobs = []
     for date, min, avg, max in results:
         tobs_dict = {}
@@ -115,7 +110,6 @@ def min_avg_max_start(start):
 
 @app.route("/api/v1.0/<start>/<end>")
 def min_avg_max_start_end(start, end):
-    # Get temp stats for dates in between start and end date inclusive #
     session = Session(engine)
     results = session.query(Measurement.date, func.min(Measurement.tobs),
                             func.avg(Measurement.tobs), func.max(Measurement.tobs)).\
@@ -123,7 +117,6 @@ def min_avg_max_start_end(start, end):
                             group_by(Measurement.date).all()
     session.close()
 
-    # Convert the query results to a dictionary
     all_tobs = []
     for date, min, avg, max in results:
         tobs_dict = {}
